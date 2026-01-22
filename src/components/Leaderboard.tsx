@@ -56,7 +56,7 @@ const Leaderboard = () => {
             </div>
             <p className="font-bold text-[#292D32] text-lg">{rank2.name}</p>
             <p className="text-[#2C4BFD] font-semibold">{rank2.xlm.toLocaleString()} XLM</p>
-            <div className="w-full h-24 bg-gradient-to-t from-[#BEC7FE]/30 to-transparent rounded-t-lg mt-2 hidden md:block"></div>
+            <div className="w-full h-24 bg-linear-to-t from-[#BEC7FE]/30 to-transparent rounded-t-lg mt-2 hidden md:block"></div>
           </div>
         )}
 
