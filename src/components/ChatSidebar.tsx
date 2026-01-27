@@ -239,7 +239,7 @@ export function ChatSidebar() {
                     {formatTimestamp(message.timestamp)}
                   </span>
                 </div>
-                <p className="font-['DM_Sans'] font-normal text-sm text-[#4D4D4D] dark:text-gray-300 text-wrap break-words">
+                <p className="font-['DM_Sans'] font-normal text-sm text-[#4D4D4D] dark:text-gray-300 text-wrap wrap-break-word">
                   {message.content}
                 </p>
               </div>

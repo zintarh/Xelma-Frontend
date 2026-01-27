@@ -56,7 +56,7 @@ const PredictionCard = ({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm max-w-[500px] mx-auto transition-all duration-300 my-[140px] mx-[20px] mb-[40px] ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
+      className={`bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm max-w-[500px] transition-all duration-300 my-[140px] mx-auto mb-[40px] ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
     >
       <h2 className="font-['DM_Sans'] text-2xl font-bold leading-8 text-[#292D32] dark:text-gray-100 mb-7 text-center">
         Guess price prediction
