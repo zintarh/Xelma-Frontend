@@ -184,6 +184,7 @@ export function PredictionControls({
             disabled={isDisabled}
             aria-describedby="legend-toggle-desc"
           />
+          <span className="prediction-card__toggle-switch" aria-hidden />
           <span className="prediction-card__toggle-label" id="legend-toggle-desc">
             I am a legend
           </span>

@@ -79,86 +79,75 @@
   color: #f3f4f6;
 }
 
-.prediction-card__button:hover:not(:disabled) {
-  border-color: #2c4bfd;
-  background: #f0f4ff;
-}
-
-.dark .prediction-card__button:hover:not(:disabled) {
-  background: #4b5563;
-  border-color: #2c4bfd;
-}
-
-/* UP button: blue */
+/* UP button: green (bg-green-500, hover:bg-green-600) */
 .prediction-card__button--up {
-  border-color: #2c4bfd;
-  background: #eef2ff;
-  color: #1e40af;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  border-color: transparent;
+  background: #22c55e; /* green-500 */
+  color: white;
+  font-weight: 700;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .prediction-card__button--up:hover:not(:disabled) {
-  background: #e0e7ff;
-  border-color: #2563eb;
+  background: #16a34a; /* green-600 */
 }
 
 .dark .prediction-card__button--up {
-  background: #1e3a8a;
-  color: #93c5fd;
+  background: #22c55e;
+  color: white;
 }
 
 .dark .prediction-card__button--up:hover:not(:disabled) {
-  background: #1e40af;
-  border-color: #3b82f6;
+  background: #16a34a;
 }
 
-/* DOWN button: gray */
+/* DOWN button: pink (bg-pink-500, hover:bg-pink-600) */
 .prediction-card__button--down {
-  border-color: #9ca3af;
-  background: #f3f4f6;
-  color: #4b5563;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  border-color: transparent;
+  background: #ec4899; /* pink-500 */
+  color: white;
+  font-weight: 700;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .prediction-card__button--down:hover:not(:disabled) {
-  background: #e5e7eb;
-  border-color: #6b7280;
+  background: #db2777; /* pink-600 */
 }
 
 .dark .prediction-card__button--down {
-  background: #374151;
-  color: #d1d5db;
+  background: #ec4899;
+  color: white;
 }
 
 .dark .prediction-card__button--down:hover:not(:disabled) {
-  background: #4b5563;
-  border-color: #9ca3af;
+  background: #db2777;
 }
 
 .prediction-card__button--active {
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgba(44, 75, 253, 0.1);
   transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .prediction-card__button--up.prediction-card__button--active {
-  background: #c7d2fe;
-  border-color: #2c4bfd;
-  color: #1e40af;
+  background: #16a34a;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
 }
 
 .dark .prediction-card__button--up.prediction-card__button--active {
-  background: #1e3a8a;
-  color: #93c5fd;
+  background: #16a34a;
 }
 
 .prediction-card__button--down.prediction-card__button--active {
-  background: #e5e7eb;
-  border-color: #6b7280;
-  color: #374151;
+  background: #db2777;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
 }
 
 .dark .prediction-card__button--down.prediction-card__button--active {
-  background: #4b5563;
-  color: #e5e7eb;
+  background: #db2777;
 }
 
 .prediction-card__button:disabled {
@@ -292,7 +281,7 @@
   cursor: not-allowed;
 }
 
-/* Toggle Section */
+/* Toggle Section — switch appearance */
 .prediction-card__toggle-section {
   margin-bottom: 24px;
 }
@@ -300,21 +289,73 @@
 .prediction-card__toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   user-select: none;
 }
 
+/* Hide native checkbox, use custom switch track */
 .prediction-card__toggle-input {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: #2c4bfd;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  appearance: none;
 }
 
-.prediction-card__toggle-input:disabled {
-  cursor: not-allowed;
+.prediction-card__toggle-input:focus-visible + .prediction-card__toggle-switch {
+  box-shadow: 0 0 0 3px rgba(44, 75, 253, 0.35);
+}
+
+/* Switch track (pill) */
+.prediction-card__toggle-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  background: #d1d5db;
+  border-radius: 9999px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .prediction-card__toggle-switch {
+  background: #4b5563;
+}
+
+.prediction-card__toggle-input:checked + .prediction-card__toggle-switch {
+  background: #2c4bfd;
+}
+
+.dark .prediction-card__toggle-input:checked + .prediction-card__toggle-switch {
+  background: #3b82f6;
+}
+
+/* Switch thumb */
+.prediction-card__toggle-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.prediction-card__toggle-input:checked + .prediction-card__toggle-switch::after {
+  transform: translateX(20px);
+}
+
+.prediction-card__toggle-input:disabled + .prediction-card__toggle-switch {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .prediction-card__toggle-label {

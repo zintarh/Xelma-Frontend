@@ -1,4 +1,3 @@
-
 import PredictionControls, { type PredictionData } from "./PredictionControls";
 import "./PredictionCard.css";
 
