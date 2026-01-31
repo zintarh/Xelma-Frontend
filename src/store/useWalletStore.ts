@@ -5,7 +5,7 @@ import {
   getAddress,
   getNetwork,
 } from '@stellar/freighter-api';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface WalletState {
   publicKey: string | null;

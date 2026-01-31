@@ -14,7 +14,6 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Toaster position="bottom-right" />
       <RouteProgressBar />
       <Header />
       {showNewsRibbon && (
