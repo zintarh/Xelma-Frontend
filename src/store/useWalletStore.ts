@@ -76,7 +76,7 @@ export const useWalletStore = create<WalletState>((set) => ({
         } else {
           const data = await response.json();
           const balances = data.balances;
-          const nativeBalance = balances.find((b: any) => b.asset_type === 'native');
+          const nativeBalance = balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native');
 
           if (nativeBalance) {
             formattedBalance = `${parseFloat(nativeBalance.balance).toFixed(2)} XLM`;
@@ -130,7 +130,7 @@ export const useWalletStore = create<WalletState>((set) => ({
             } else {
               const data = await response.json();
               const balances = data.balances;
-              const nativeBalance = balances.find((b: any) => b.asset_type === 'native');
+              const nativeBalance = balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native');
 
               if (nativeBalance) {
                 formattedBalance = `${parseFloat(nativeBalance.balance).toFixed(2)} XLM`;
@@ -149,8 +149,8 @@ export const useWalletStore = create<WalletState>((set) => ({
           });
         }
       }
-    } catch (e) {
-      
+    } catch {
+      // wallet not connected, ignore
     }
   }
 }));

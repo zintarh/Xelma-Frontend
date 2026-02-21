@@ -8,8 +8,10 @@ const RouteProgressBar = () => {
 
   useEffect(() => {
     // Start the progress bar when the route changes or on initial load
-    setVisible(true);
-    setProgress(0);
+    const initTimeout = setTimeout(() => {
+      setVisible(true);
+      setProgress(0);
+    }, 0);
 
     // Initial rapid progress
     const startTimeout = setTimeout(() => {
@@ -34,6 +36,7 @@ const RouteProgressBar = () => {
     }, 1000);
 
     return () => {
+      clearTimeout(initTimeout);
       clearTimeout(startTimeout);
       clearTimeout(middleTimeout);
       clearTimeout(finishTimeout);
