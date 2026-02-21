@@ -8,6 +8,7 @@ import Leaderboard from "./components/Leaderboard";
 import RouteProgressBar from "./components/RouteProgressBar";
 import { Toaster } from "sonner";
 import Dashboard from "./pages/Dashboard";
+import LearnPage from "./pages/Learn";
 
 function App() {
   const [showNewsRibbon, setShowNewsRibbon] = useState(true);
@@ -20,9 +21,8 @@ function App() {
         <NewsRibbon onClose={() => setShowNewsRibbon(false)} />
       )}
       <main
-        className={`px-4 lg:px-14 min-h-screen bg-[#FAFAFA] dark:bg-gray-900 transition-[padding] ${
-          showNewsRibbon ? "pt-32 lg:pt-44" : "pt-24 lg:pt-32"
-        }`}
+        className={`px-4 lg:px-14 min-h-screen bg-[#FAFAFA] dark:bg-gray-900 transition-[padding] ${showNewsRibbon ? "pt-32 lg:pt-44" : "pt-24 lg:pt-32"
+          }`}
       >
         <Routes>
           <Route
@@ -34,11 +34,7 @@ function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route
             path="/learn"
-            element={
-              <div className="text-center mt-20 text-2xl font-bold text-[#9B9B9B]">
-                Learn Page Placeholder
-              </div>
-            }
+            element={<LearnPage />}
           />
           <Route
             path="/pools"
