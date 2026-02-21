@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useWalletStore } from '../store/useWalletStore';
-import { Loader2, AlertCircle, LogOut, Wallet } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
+import { Loader2, AlertCircle, LogOut, Wallet, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 
 
@@ -14,6 +15,7 @@ const WalletConnect = () => {
         disconnect,
         checkConnection
     } = useWalletStore();
+    const { isAuthenticated } = useAuthStore();
 
     useEffect(() => {
         checkConnection();
@@ -48,6 +50,9 @@ const WalletConnect = () => {
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                         {shortAddress}
                     </span>
+                    {isAuthenticated && (
+                        <ShieldCheck className="w-4 h-4 text-green-500" title="Authenticated with backend" />
+                    )}
 
                     <button
                         onClick={disconnect}

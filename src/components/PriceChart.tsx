@@ -103,7 +103,7 @@ const PriceChart = ({ data = dummyData, height = 300 }: PriceChartProps) => {
     seriesRef.current = areaSeries;
 
     // Set data
-    areaSeries.setData(data as any);
+    areaSeries.setData(data as Parameters<typeof areaSeries.setData>[0]);
 
     // Fit content
     chart.timeScale().fitContent();

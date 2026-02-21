@@ -4,8 +4,12 @@ import {
   requestAccess,
   getAddress,
   getNetwork,
+  signMessage,
 } from '@stellar/freighter-api';
 import { toast } from 'sonner';
+import { useAuthStore } from './useAuthStore';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 interface WalletState {
   publicKey: string | null;
@@ -76,7 +80,7 @@ export const useWalletStore = create<WalletState>((set) => ({
         } else {
           const data = await response.json();
           const balances = data.balances;
-          const nativeBalance = balances.find((b: any) => b.asset_type === 'native');
+          const nativeBalance = balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native');
 
           if (nativeBalance) {
             formattedBalance = `${parseFloat(nativeBalance.balance).toFixed(2)} XLM`;
@@ -94,10 +98,52 @@ export const useWalletStore = create<WalletState>((set) => ({
         publicKey: address,
         network: (network as string | null) || null,
         balance: formattedBalance,
-        isConnecting: false
+        isConnecting: false,
       });
 
       toast.success('Wallet connected!');
+
+      // Backend auth: challenge → sign → JWT
+      try {
+        const challengeRes = await fetch(`${API_BASE}/api/auth/challenge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicKey: address }),
+        });
+
+        if (!challengeRes.ok) throw new Error('Failed to get auth challenge');
+
+        const { challenge } = await challengeRes.json();
+
+        const { signedMessage, error: signError } = await signMessage(challenge, {
+          address,
+          networkPassphrase: network === 'TESTNET'
+            ? 'Test SDF Network ; September 2015'
+            : 'Public Global Stellar Network ; September 2015',
+        });
+
+        if (signError) throw new Error(signError.message ?? 'Failed to sign challenge');
+
+        const connectRes = await fetch(`${API_BASE}/api/auth/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicKey: address, signedChallenge: signedMessage }),
+        });
+
+        if (connectRes.status === 401) {
+          useAuthStore.getState().clearAuth();
+          throw new Error('Authentication rejected by server');
+        }
+
+        if (!connectRes.ok) throw new Error('Failed to authenticate with backend');
+
+        const { token } = await connectRes.json();
+        useAuthStore.getState().setJwt(token);
+        toast.success('Authenticated with backend!');
+      } catch (authError) {
+        console.error('Backend auth error:', authError);
+        toast.error('Wallet connected but backend auth failed');
+      }
     } catch (error) {
       console.error('Connection error:', error);
       toast.error('Failed to connect wallet');
@@ -107,6 +153,7 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   disconnect: () => {
     set({ publicKey: null, network: null, balance: null });
+    useAuthStore.getState().clearAuth();
     toast.success('Wallet disconnected');
   },
 
@@ -130,7 +177,7 @@ export const useWalletStore = create<WalletState>((set) => ({
             } else {
               const data = await response.json();
               const balances = data.balances;
-              const nativeBalance = balances.find((b: any) => b.asset_type === 'native');
+              const nativeBalance = balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native');
 
               if (nativeBalance) {
                 formattedBalance = `${parseFloat(nativeBalance.balance).toFixed(2)} XLM`;
@@ -149,8 +196,8 @@ export const useWalletStore = create<WalletState>((set) => ({
           });
         }
       }
-    } catch (e) {
-      
+    } catch {
+      // ignore: silently skip if Freighter is not connected on mount
     }
   }
 }));

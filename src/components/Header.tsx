@@ -3,9 +3,6 @@ import { NavLink } from "react-router-dom";
 import { useTheme } from "next-themes";
 import WalletConnect from "./WalletConnect";
 import Logo from '../assets/logo.svg';
-import DiscordLogo from '../assets/discord-icon.svg';
-import XLMLogo from '../assets/xlm-icon.svg';
-import Avatar from '../assets/avatar.svg';
 import ProfileSettingsModal from './ProfileSettingsModal';
 
 interface Routes {
