@@ -51,7 +51,7 @@ const WalletConnect = () => {
                         {shortAddress}
                     </span>
                     {isAuthenticated && (
-                        <ShieldCheck className="w-4 h-4 text-green-500" title="Authenticated with backend" />
+                        <ShieldCheck className="w-4 h-4 text-green-500" aria-label="Authenticated with backend" />
                     )}
 
                     <button
