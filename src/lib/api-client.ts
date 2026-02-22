@@ -1,4 +1,5 @@
 import type { Guide, Tip } from '../types/education';
+import type { NotificationItem } from '../types/notification';
 import { apiFetch } from './api';
 
 export { ApiError } from './api';
@@ -60,4 +61,10 @@ export const predictionsApi = {
         const response = await apiFetch<UserPredictionsResponse>(`/api/predictions/user/${encodeURIComponent(userId)}`);
         return normalizeUserPredictions(response);
     },
+};
+
+export const notificationsApi = {
+    getUnreadCount: () => apiFetch<{ unread: number }>('/api/notifications/unread-count'),
+    getNotifications: () => apiFetch<NotificationItem[]>('/api/notifications'),
+    markAsRead: (id: string) => apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST' }),
 };
