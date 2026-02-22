@@ -1,13 +1,31 @@
+import { useEffect } from "react";
 import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
 import type { PredictionData } from "../components/PredictionControls";
+import { useRoundStore } from "../store/useRoundStore";
+import PredictionHistory from "../components/PredictionHistory";
+import { useWalletStore } from "../store/useWalletStore";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
 }
 
 const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
+  const isRoundActive = useRoundStore((state) => state.isRoundActive);
+  const publicKey = useWalletStore((state) => state.publicKey);
+
+  useEffect(() => {
+    const { fetchActiveRound, subscribeToRoundEvents } = useRoundStore.getState();
+
+    void fetchActiveRound();
+    const unsubscribe = subscribeToRoundEvents();
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const handlePrediction = (data: PredictionData) => {
     console.log("Prediction made:", data);
   };
@@ -22,7 +40,7 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
           <div className="dashboard__center lg:col-span-1 flex flex-col gap-6">
             <PredictionCard
               isWalletConnected={true}
-              isRoundActive={true}
+              isRoundActive={isRoundActive}
               onPrediction={handlePrediction}
             />
           </div>
@@ -40,6 +58,8 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
                 142 Playing Now
               </p>
             </div>
+
+            <PredictionHistory userId={publicKey} />
           </div>
         </div>
       </div>
