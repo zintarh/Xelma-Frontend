@@ -36,3 +36,16 @@ export const educationApi = {
     getGuides: () => fetchApi<Guide[]>('/api/education/guides'),
     getTip: () => fetchApi<Tip | null>('/api/education/tip'),
 };
+
+export interface Round {
+    id: string | number;
+    status?: string;
+    startsAt?: string;
+    endsAt?: string;
+    resolvedAt?: string;
+    [key: string]: unknown;
+}
+
+export const roundsApi = {
+    getActive: () => fetchApi<Round | null>('/api/rounds/active'),
+};
