@@ -171,7 +171,7 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
 
       {/* Mobile Toggle Button */}
       <button
-        className="md:hidden fixed left-4 bottom-4 w-14 h-14 bg-[#2C4BFD] border-none rounded-full flex items-center justify-center cursor-pointer z-60 shadow-lg shadow-[#2C4BFD]/30 transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#2C4BFD]/40"
+        className="md:hidden fixed right-4 bottom-24 w-14 h-14 bg-[#2C4BFD] border-none rounded-full flex items-center justify-center cursor-pointer z-70 shadow-lg shadow-[#2C4BFD]/30 transition-transform duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#2C4BFD]/40"
         onClick={toggleMobile}
         aria-label="Toggle chat sidebar"
       >
@@ -203,12 +203,18 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
         </svg>
       </button>
 
-      {/* Sidebar */}
+      {/* Sidebar / Bottom Sheet */}
       <aside
-        className={`chat-sidebar fixed left-0 w-80 flex flex-col z-40 transition-all duration-300 ease-in-out border-r
+        className={`chat-sidebar fixed flex flex-col z-60 transition-all duration-300 ease-in-out border-r
         bg-white dark:bg-[#1f2937] border-gray-100 dark:border-gray-800
-        ${showNewsRibbon ? "top-[128px] lg:top-[176px] h-[calc(100vh-128px)] lg:h-[calc(100vh-176px)]" : "top-[80px] lg:top-[112px] h-[calc(100vh-80px)] lg:h-[calc(100vh-112px)]"}
-        md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        
+        /* Desktop: Side Drawer */
+        md:left-0 md:w-80 md:translate-x-0
+        ${showNewsRibbon ? "md:top-[128px] lg:md:top-[176px] md:h-[calc(100vh-128px)] lg:md:h-[calc(100vh-176px)]" : "md:top-[80px] lg:md:top-[112px] md:h-[calc(100vh-80px)] lg:md:h-[calc(100vh-112px)]"}
+        
+        /* Mobile: Bottom Sheet */
+        left-0 bottom-0 w-full h-[60vh] rounded-t-2xl shadow-2xl md:rounded-none md:shadow-none
+        ${isMobileOpen ? "translate-y-0" : "translate-y-full md:translate-y-0 md:translate-x-0"}`}
       >
         {/* Header */}
         <header className="flex items-center justify-between p-4 m-2.5 rounded-lg bg-white dark:bg-[#1f2937] dark:text-white">
