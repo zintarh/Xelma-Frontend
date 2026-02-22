@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTheme } from "next-themes";
 import WalletConnect from "./WalletConnect";
+import NotificationsBell from './NotificationsBell';
 import Logo from '../assets/logo.svg';
 import ProfileSettingsModal from './ProfileSettingsModal';
 
@@ -92,6 +93,7 @@ const Header = () => {
               </svg>
             )}
           </button>
+          <NotificationsBell />
           <WalletConnect />
         </div>
 
@@ -174,6 +176,7 @@ const Header = () => {
           </ul>
 
           <div className="mt-4 flex items-center justify-end">
+            <NotificationsBell />
             <WalletConnect />
           </div>
         </div>

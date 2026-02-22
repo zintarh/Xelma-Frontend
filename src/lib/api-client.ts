@@ -1,4 +1,5 @@
 import type { Guide, Tip } from '../types/education';
+import type { NotificationItem } from '../types/notification';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -26,13 +27,20 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
         }
 
         return await response.json();
-    } catch (error) {
-        if (error instanceof ApiError) throw error;
-        throw new ApiError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } catch (rawError) {
+        if (rawError instanceof ApiError) throw rawError;
+        if (rawError instanceof Error) throw new ApiError(rawError.message);
+        throw new ApiError(String(rawError ?? 'An unexpected error occurred'));
     }
 }
 
 export const educationApi = {
     getGuides: () => fetchApi<Guide[]>('/api/education/guides'),
     getTip: () => fetchApi<Tip | null>('/api/education/tip'),
+};
+
+export const notificationsApi = {
+    getUnreadCount: () => fetchApi<{ unread: number }>('/api/notifications/unread-count'),
+    getNotifications: () => fetchApi<NotificationItem[]>('/api/notifications'),
+    markAsRead: (id: string) => fetchApi<void>(`/api/notifications/${id}/read`, { method: 'POST' }),
 };
