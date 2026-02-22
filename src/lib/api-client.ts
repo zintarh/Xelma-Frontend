@@ -49,3 +49,44 @@ export interface Round {
 export const roundsApi = {
     getActive: () => fetchApi<Round | null>('/api/rounds/active'),
 };
+
+export interface UserPrediction {
+    id: string | number;
+    direction?: string;
+    stake?: string | number;
+    exactPrice?: string | number;
+    roundId?: string | number;
+    status?: string;
+    createdAt?: string;
+    [key: string]: unknown;
+}
+
+type UserPredictionsResponse =
+    | UserPrediction[]
+    | {
+        predictions?: UserPrediction[];
+        data?: UserPrediction[];
+    };
+
+function normalizeUserPredictions(response: UserPredictionsResponse): UserPrediction[] {
+    if (Array.isArray(response)) {
+        return response;
+    }
+
+    if (Array.isArray(response.predictions)) {
+        return response.predictions;
+    }
+
+    if (Array.isArray(response.data)) {
+        return response.data;
+    }
+
+    return [];
+}
+
+export const predictionsApi = {
+    getUserHistory: async (userId: string) => {
+        const response = await fetchApi<UserPredictionsResponse>(`/api/predictions/user/${encodeURIComponent(userId)}`);
+        return normalizeUserPredictions(response);
+    },
+};
