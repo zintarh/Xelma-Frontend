@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import WalletConnect from "./WalletConnect";
 import Logo from '../assets/logo.svg';
 import ProfileSettingsModal from './ProfileSettingsModal';
+import { useProfileStore } from '../store/useProfileStore';
 
 interface Routes {
   name: string;
@@ -14,6 +15,7 @@ const Header = () => {
   const [open, setOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
+  const profile = useProfileStore((s) => s.profile);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -193,13 +195,7 @@ const Header = () => {
         <ProfileSettingsModal
           key='profile-settings-modal'
           onClose={() => setProfileOpen(false)}
-          initialValues={{
-            name: 'currentUsername',
-            bio: '',
-            twitterLink: '',
-            streamerMode: false,
-            avatarUrl: null,
-          }}
+          initialValues={profile ?? undefined}
         />
       )}
     </header>
