@@ -4,6 +4,8 @@ import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
 import type { PredictionData } from "../components/PredictionControls";
 import { useRoundStore } from "../store/useRoundStore";
+import PredictionHistory from "../components/PredictionHistory";
+import { useWalletStore } from "../store/useWalletStore";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -11,6 +13,7 @@ interface DashboardProps {
 
 const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
   const isRoundActive = useRoundStore((state) => state.isRoundActive);
+  const publicKey = useWalletStore((state) => state.publicKey);
 
   useEffect(() => {
     const { fetchActiveRound, subscribeToRoundEvents } = useRoundStore.getState();
@@ -55,6 +58,8 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
                 142 Playing Now
               </p>
             </div>
+
+            <PredictionHistory userId={publicKey} />
           </div>
         </div>
       </div>
