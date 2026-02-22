@@ -1,14 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-
-type ProfileSettingsValues = {
-  avatarUrl: string | null;
-  name: string;
-  bio: string;
-  twitterLink: string;
-  streamerMode: boolean;
-};
+import { useProfileStore } from "../store/useProfileStore";
+import type { ProfileSettingsValues } from "../lib/profileApi";
 
 type Props = {
   onClose: () => void;
@@ -60,33 +54,37 @@ function writeDraft(draft: Partial<ProfileSettingsValues>) {
   }
 }
 
-export default function ProfileSettingsModal({ onClose, initialValues }: Props) {
-  const defaults = useMemo(
-    () => ({
-      avatarUrl: initialValues?.avatarUrl ?? null,
-      name: initialValues?.name ?? "",
-      bio: initialValues?.bio ?? "",
-      twitterLink: initialValues?.twitterLink ?? "",
-      streamerMode: Boolean(initialValues?.streamerMode ?? false),
-    }),
-    [initialValues]
-  );
+function resolveInitial(
+  profile: ProfileSettingsValues | null,
+  fallback?: Partial<ProfileSettingsValues>,
+): ProfileSettingsValues {
+  const draft = readDraft();
+  const source = profile ?? draft ?? fallback ?? {};
+  const bio = (source.bio ?? "").slice(0, BIO_MAX);
+  return {
+    avatarUrl: source.avatarUrl ?? null,
+    name: source.name ?? "",
+    bio,
+    twitterLink: source.twitterLink ?? "",
+    streamerMode: Boolean(source.streamerMode ?? false),
+  };
+}
 
-  const draft = useMemo(() => readDraft(), []);
+function ProfileSettingsForm({
+  onClose,
+  resolved,
+}: {
+  onClose: () => void;
+  resolved: ProfileSettingsValues;
+}) {
+  const { saveProfile } = useProfileStore();
 
-  const initial = useMemo(() => {
-    const merged = { ...defaults, ...(draft ?? {}) };
-    if (typeof merged.bio === "string" && merged.bio.length > BIO_MAX) {
-      merged.bio = merged.bio.slice(0, BIO_MAX);
-    }
-    return merged;
-  }, [defaults, draft]);
-
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(initial.avatarUrl);
-  const [name, setName] = useState(initial.name);
-  const [bio, setBio] = useState(initial.bio);
-  const [twitterLink, setTwitterLink] = useState(initial.twitterLink);
-  const [streamerMode, setStreamerMode] = useState(initial.streamerMode);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(resolved.avatarUrl);
+  const [name, setName] = useState(resolved.name);
+  const [bio, setBio] = useState(resolved.bio);
+  const [twitterLink, setTwitterLink] = useState(resolved.twitterLink);
+  const [streamerMode, setStreamerMode] = useState(resolved.streamerMode);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -159,7 +157,7 @@ export default function ProfileSettingsModal({ onClose, initialValues }: Props) 
     setAvatarPreviewUrl(url);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
 
     const payload: ProfileSettingsValues = {
@@ -170,13 +168,23 @@ export default function ProfileSettingsModal({ onClose, initialValues }: Props) 
       streamerMode,
     };
 
-    console.log("[ProfileSettingsModal] SAVE", payload);
+    setIsSaving(true);
 
-    writeDraft(payload);
+    const ok = await saveProfile(payload);
 
-    toast.success("Profile settings saved", {
-      description: "Your changes have been stored on this device.",
-    });
+    setIsSaving(false);
+
+    if (ok) {
+      writeDraft(payload);
+      toast.success("Profile settings saved", {
+        description: "Your profile has been synced to the server.",
+      });
+    } else {
+      writeDraft(payload);
+      toast.error("Could not reach the server", {
+        description: "Your changes have been saved locally as a draft.",
+      });
+    }
 
     onClose();
   };
@@ -186,7 +194,7 @@ export default function ProfileSettingsModal({ onClose, initialValues }: Props) 
     if (!modalRef.current.contains(e.target as Node)) onClose();
   };
 
-  const ui = (
+  return (
     <div className="fixed inset-0 z-[9999]" onMouseDown={handleBackdropMouseDown}>
       {/* overlay */}
       <div className="absolute inset-0 bg-black/50" />
@@ -359,22 +367,64 @@ export default function ProfileSettingsModal({ onClose, initialValues }: Props) 
               <div
                 role="button"
                 tabIndex={0}
-                onClick={handleSave}
-                onKeyDown={(e) => onEnterOrSpace(e, handleSave)}
-                className="rounded-2xl bg-[#2C4BFD] px-10 py-4 text-sm font-semibold text-white cursor-pointer hover:opacity-95"
+                onClick={() => { void handleSave(); }}
+                onKeyDown={(e) => onEnterOrSpace(e, () => { void handleSave(); })}
+                className={cx(
+                  "rounded-2xl bg-[#2C4BFD] px-10 py-4 text-sm font-semibold text-white cursor-pointer hover:opacity-95",
+                  isSaving && "opacity-60 pointer-events-none"
+                )}
               >
-                SAVE
+                {isSaving ? "SAVING..." : "SAVE"}
               </div>
             </div>
 
             <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-              Drafts are saved automatically on this device.
+              Your profile is synced with the server. Local drafts are used as fallback.
             </p>
           </div>
         </div>
       </div>
     </div>
   );
+}
 
-  return createPortal(ui, document.body);
+export default function ProfileSettingsModal({ onClose, initialValues }: Props) {
+  const { profile, isLoading, loadProfile } = useProfileStore();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    loadProfile().then(
+      () => setReady(true),
+      () => setReady(true),
+    );
+  }, [loadProfile]);
+
+  if (!ready || isLoading) {
+    const shell = (
+      <div className="fixed inset-0 z-[9999]">
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className={cx(
+              "relative w-full max-w-3xl",
+              "rounded-2xl bg-white dark:bg-gray-900",
+              "border border-gray-100 dark:border-gray-800",
+              "shadow-2xl",
+              "flex items-center justify-center py-24"
+            )}
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#2C4BFD]" />
+          </div>
+        </div>
+      </div>
+    );
+    return createPortal(shell, document.body);
+  }
+
+  const resolved = resolveInitial(profile, initialValues);
+
+  return createPortal(
+    <ProfileSettingsForm onClose={onClose} resolved={resolved} />,
+    document.body,
+  );
 }

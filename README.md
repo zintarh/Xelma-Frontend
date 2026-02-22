@@ -124,3 +124,24 @@ VITE_WS_URL=https://your-backend-domain.com
 ⚠️ The backend must allow CORS for the frontend CLIENT_URL.
 Example:
 CLIENT_URL=https://your-frontend-domain.com
+
+## Education & Learn Page
+
+The `/learn` page is now fully integrated with the backend API. Content can be updated dynamically without requiring a frontend redeployment.
+
+### Backend Endpoints
+- `GET /api/education/guides`: Fetches the list of educational guides.
+- `GET /api/education/tip`: Fetches the current "alpha" tip of the day.
+
+### Components
+- `LearnPage`: Main container fetching and managing state for education content.
+- `GuideCard`: Premium card component for displaying individual guides.
+- `TipCard`: High-impact card component for the daily tip.
+- `StatusStates`: Reusable Loading, Error, and Empty state components.
+
+### Testing
+Unit tests are implemented using Vitest and React Testing Library.
+Run unit tests:
+```bash
+npm run test:unit
+```
