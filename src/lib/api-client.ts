@@ -22,8 +22,36 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
             },
         });
 
+        const contentType = response.headers.get('content-type') ?? '';
+
+        // If the response is an error, try to extract a useful message (JSON or text)
         if (!response.ok) {
-            throw new ApiError(`Failed to fetch ${endpoint}`, response.status);
+            let message = `Failed to fetch ${endpoint}`;
+            try {
+                if (contentType.includes('application/json')) {
+                    const body = await response.json();
+                    // Try to pull a message property if present
+                    message = (body && (body.message || body.error)) ?? JSON.stringify(body);
+                } else {
+                    const text = await response.text();
+                    message = text || message;
+                }
+            } catch {
+                // Fallback to status text if parsing fails
+                message = response.statusText || message;
+            }
+            throw new ApiError(message, response.status);
+        }
+
+        // If successful but not JSON, return text (useful for void or plain-text responses)
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            try {
+                // Try to parse text as JSON if possible
+                return (JSON.parse(text) as T);
+            } catch {
+                return (text as unknown as T);
+            }
         }
 
         return await response.json();

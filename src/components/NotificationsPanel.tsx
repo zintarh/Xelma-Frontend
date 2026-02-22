@@ -23,7 +23,13 @@ const NotificationsPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
       <div className="max-h-80 overflow-auto">
         {loadingList && <div className="p-4">Loading...</div>}
-        {errorList && <div className="p-4 text-red-500">{errorList}</div>}
+        {errorList && (
+          <div className="p-4 text-red-500">
+            {typeof errorList === 'string' && errorList.trim().startsWith('<')
+              ? 'Server returned non-JSON response. Check API or auth.'
+              : errorList}
+          </div>
+        )}
         {!loadingList && !errorList && list.length === 0 && (
           <div className="p-6 text-center text-sm text-gray-500">
             <Clock className="mx-auto mb-2" />
