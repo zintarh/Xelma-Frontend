@@ -33,6 +33,13 @@ export interface UserPrediction {
     [key: string]: unknown;
 }
 
+export interface SubmitPredictionRequest {
+    direction: 'UP' | 'DOWN';
+    stake: string;
+    exactPrice?: string;
+    isLegend: boolean;
+}
+
 type UserPredictionsResponse =
     | UserPrediction[]
     | {
@@ -60,6 +67,12 @@ export const predictionsApi = {
     getUserHistory: async (userId: string) => {
         const response = await apiFetch<UserPredictionsResponse>(`/api/predictions/user/${encodeURIComponent(userId)}`);
         return normalizeUserPredictions(response);
+    },
+    submit: async (prediction: SubmitPredictionRequest) => {
+        return apiFetch<UserPrediction>('/api/predictions/submit', {
+            method: 'POST',
+            body: JSON.stringify(prediction),
+        });
     },
 };
 
