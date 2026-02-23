@@ -58,3 +58,20 @@ export const socketService = {
     socket.emit('join:notifications', userId);
   },
 };
+
+export const appSocket = {
+  joinChannel(channel: string, payload?: unknown) {
+    socketService.connect();
+    socket.emit(channel, payload);
+  },
+  leaveChannel(channel: string, payload?: unknown) {
+    const leaveChannel = channel.startsWith('join:')
+      ? channel.replace('join:', 'leave:')
+      : `leave:${channel}`;
+    socket.emit(leaveChannel, payload);
+  },
+  on(_channel: string, event: string, callback: (payload: unknown) => void) {
+    socket.on(event, callback);
+    return () => socket.off(event, callback);
+  },
+};

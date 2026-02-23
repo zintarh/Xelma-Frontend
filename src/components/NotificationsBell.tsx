@@ -21,7 +21,7 @@ const NotificationsBell: React.FC = () => {
   useEffect(() => {
     if (joinedRef.current) return;
     appSocket.joinChannel('join:notifications');
-    const off = appSocket.on('join:notifications', 'notification', (payload) => {
+    const off = appSocket.on('join:notifications', 'notification', (payload: unknown) => {
       addNotification(payload as NotificationEventPayload);
     });
     joinedRef.current = true;
