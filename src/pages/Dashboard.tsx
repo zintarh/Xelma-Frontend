@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
@@ -6,6 +6,7 @@ import type { PredictionData } from "../components/PredictionControls";
 import { useRoundStore } from "../store/useRoundStore";
 import PredictionHistory from "../components/PredictionHistory";
 import { useWalletStore } from "../store/useWalletStore";
+import { predictionsApi, ApiError } from "../lib/api-client";
 
 interface DashboardProps {
   showNewsRibbon?: boolean;
@@ -14,6 +15,8 @@ interface DashboardProps {
 const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
   const isRoundActive = useRoundStore((state) => state.isRoundActive);
   const publicKey = useWalletStore((state) => state.publicKey);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     const { fetchActiveRound, subscribeToRoundEvents } = useRoundStore.getState();
@@ -26,8 +29,33 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
     };
   }, []);
 
-  const handlePrediction = (data: PredictionData) => {
-    console.log("Prediction made:", data);
+  const handlePrediction = async (data: PredictionData) => {
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      await predictionsApi.submit({
+        direction: data.direction,
+        stake: data.stake,
+        exactPrice: data.exactPrice,
+        isLegend: data.isLegend,
+      });
+
+      setMessage({ type: 'success', text: 'Prediction Sent!' });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setMessage(null);
+      }, 3000);
+    } catch (error) {
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to submit prediction. Please try again.';
+      
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -35,12 +63,27 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
       <ChatSidebar showNewsRibbon={showNewsRibbon} />
 
       <div className="flex-1 ml-0 md:ml-80 transition-[margin] duration-300 ease-in-out p-4 lg:p-6">
+        {/* Message display */}
+        {message && (
+          <div
+            className={`mb-4 p-4 rounded-lg border ${
+              message.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+            }`}
+            role="alert"
+          >
+            <p className="font-medium">{message.text}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Center: Prediction controls (Issue: core prediction area) */}
           <div className="dashboard__center lg:col-span-1 flex flex-col gap-6">
             <PredictionCard
               isWalletConnected={true}
               isRoundActive={isRoundActive}
+              isConnecting={isSubmitting}
               onPrediction={handlePrediction}
             />
           </div>
