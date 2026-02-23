@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ChatSidebar } from "../components/ChatSidebar";
 import PriceChart from "../components/PriceChart";
 import PredictionCard from "../components/PredictionCard";
@@ -17,6 +17,7 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
   const publicKey = useWalletStore((state) => state.publicKey);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const { fetchActiveRound, subscribeToRoundEvents } = useRoundStore.getState();
@@ -29,9 +30,24 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
     };
   }, []);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const handlePrediction = async (data: PredictionData) => {
     setIsSubmitting(true);
     setMessage(null);
+
+    // Clear any existing timeout
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
 
     try {
       await predictionsApi.submit({
@@ -44,8 +60,9 @@ const Dashboard = ({ showNewsRibbon = true }: DashboardProps) => {
       setMessage({ type: 'success', text: 'Prediction Sent!' });
       
       // Clear message after 3 seconds
-      setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         setMessage(null);
+        timeoutRef.current = null;
       }, 3000);
     } catch (error) {
       const errorMessage = error instanceof ApiError 
