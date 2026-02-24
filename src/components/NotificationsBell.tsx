@@ -28,14 +28,6 @@ const NotificationsBell: React.FC = () => {
         addNotification(payload as NotificationEventPayload);
       },
     );
-    appSocket.joinChannel("join:notifications");
-    const off = appSocket.on(
-      "join:notifications",
-      "notification",
-      (payload) => {
-        addNotification(payload as NotificationEventPayload);
-      },
-    );
     joinedRef.current = true;
     return () => {
       off();
