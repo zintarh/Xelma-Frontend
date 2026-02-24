@@ -59,27 +59,22 @@ export const socketService = {
   },
 };
 
-// Lightweight channel-style wrapper used by the notifications UI.
-// In tests, this is fully mocked; at runtime we simply ensure the socket
-// is connected and attach/detach listeners for the given event.
+type SocketEventCallback = (payload: unknown) => void;
+
+// Backward-compatible API used by NotificationsBell/tests.
 export const appSocket = {
-  joinChannel(channel: string) {
-    // For now we just ensure the socket connection is active.
-    // Channel-specific logic can be added on the backend if needed.
-    socketService.connect();
-    // Optionally, emit a join event if needed in future:
-    // socket.emit(channel);
+  joinChannel(channel: string, payload?: unknown) {
+    socket.emit(channel, payload);
   },
-  leaveChannel(_channel: string) {
-    // No-op for now; connection lifecycle is handled elsewhere.
+  leaveChannel(channel: string, payload?: unknown) {
+    const leaveEvent = channel.startsWith('join:')
+      ? channel.replace('join:', 'leave:')
+      : `leave:${channel}`;
+    socket.emit(leaveEvent, payload);
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  on(_channel: string, event: string, cb: (payload: any) => void) {
-    const handler = (payload: any) => cb(payload);
-    socket.on(event, handler);
-    return () => {
-      socket.off(event, handler);
-    };
+  on(_channel: string, event: string, callback: SocketEventCallback) {
+    socket.on(event, callback);
+    return () => socket.off(event, callback);
   },
 };
 
