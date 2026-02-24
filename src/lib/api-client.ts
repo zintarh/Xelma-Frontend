@@ -121,3 +121,32 @@ export const priceApi = {
         return normalized.sort((a, b) => a.time - b.time);
     },
 };
+
+/** Leaderboard entry from GET /api/leaderboard?mode=UP_DOWN */
+export interface LeaderboardEntry {
+    id?: string | number;
+    userId?: string;
+    username?: string;
+    name?: string;
+    avatar?: string | null;
+    xlm?: number;
+    score?: number;
+    [key: string]: unknown;
+}
+
+type LeaderboardResponse = LeaderboardEntry[] | { data?: LeaderboardEntry[]; leaderboard?: LeaderboardEntry[] };
+
+function normalizeLeaderboard(response: LeaderboardResponse): LeaderboardEntry[] {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response.data)) return response.data;
+    if (Array.isArray(response.leaderboard)) return response.leaderboard;
+    return [];
+}
+
+export const leaderboardApi = {
+    getLeaderboard: async (mode: string = 'UP_DOWN') => {
+        const response = await apiFetch<LeaderboardResponse>(`/api/leaderboard?mode=${encodeURIComponent(mode)}`);
+        return normalizeLeaderboard(response);
+    },
+};
+

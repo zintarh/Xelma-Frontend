@@ -59,18 +59,21 @@ export const socketService = {
   },
 };
 
+type SocketEventCallback = (payload: unknown) => void;
+
+// Backward-compatible API used by NotificationsBell/tests.
 export const appSocket = {
   joinChannel(channel: string, payload?: unknown) {
     socketService.connect();
     socket.emit(channel, payload);
   },
   leaveChannel(channel: string, payload?: unknown) {
-    const leaveChannel = channel.startsWith('join:')
+    const leaveEvent = channel.startsWith('join:')
       ? channel.replace('join:', 'leave:')
       : `leave:${channel}`;
-    socket.emit(leaveChannel, payload);
+    socket.emit(leaveEvent, payload);
   },
-  on(_channel: string, event: string, callback: (payload: unknown) => void) {
+  on(_channel: string, event: string, callback: SocketEventCallback) {
     socket.on(event, callback);
     return () => socket.off(event, callback);
   },
