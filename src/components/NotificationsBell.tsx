@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Bell } from './icons';
-import { useNotificationsStore } from '../store/useNotificationsStore';
-import type { NotificationEventPayload } from '../types/notification';
-import NotificationsPanel from './NotificationsPanel';
-import { appSocket } from '../lib/socket';
+import React, { useEffect, useRef, useState } from "react";
+import { Bell } from "./icons";
+import { useNotificationsStore } from "../store/useNotificationsStore";
+import type { NotificationEventPayload } from "../types/notification";
+import NotificationsPanel from "./NotificationsPanel";
+import { appSocket } from "../lib/socket";
 
 const NotificationsBell: React.FC = () => {
   const unread = useNotificationsStore((s) => s.unread);
@@ -21,15 +21,19 @@ const NotificationsBell: React.FC = () => {
 
   useEffect(() => {
     if (joinedRef.current) return;
-    appSocket.joinChannel('join:notifications');
-    const off = appSocket.on('join:notifications', 'notification', (payload: unknown) => {
-      addNotification(payload as NotificationEventPayload);
-    });
+    appSocket.joinChannel("join:notifications");
+    const off = appSocket.on(
+      "join:notifications",
+      "notification",
+      (payload: unknown) => {
+        addNotification(payload as NotificationEventPayload);
+      },
+    );
     joinedRef.current = true;
     return () => {
       off();
       try {
-        appSocket.leaveChannel('join:notifications');
+        appSocket.leaveChannel("join:notifications");
       } catch {
         // ignore
       }
