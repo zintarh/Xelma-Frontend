@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { socketService } from "../lib/socket";
 
 interface Message {
   id: string;
@@ -8,39 +9,23 @@ interface Message {
   timestamp: Date;
 }
 
-// Mock messages for MVP
-const mockMessages: Message[] = [
-  {
-    id: "1",
-    username: "CryptoKing",
-    content: "Just made a great prediction on XLM! 🚀",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    id: "2",
-    username: "MarketWatcher",
-    content: "The market is looking bullish today!",
-    timestamp: new Date(Date.now() - 1000 * 60 * 3),
-  },
-  {
-    id: "3",
-    username: "TradePro",
-    content: "Anyone else seeing this pattern on Bitcoin?",
-    timestamp: new Date(Date.now() - 1000 * 60 * 2),
-  },
-  {
-    id: "4",
-    username: "NewTrader",
-    content: "Just joined, excited to learn from everyone!",
-    timestamp: new Date(Date.now() - 1000 * 60 * 1),
-  },
-  {
-    id: "5",
-    username: "Joedev",
-    content: "Welcome to the community! 🎉",
-    timestamp: new Date(Date.now() - 1000 * 30),
-  },
-];
+interface ApiMessage {
+  id: string;
+  username: string;
+  avatar?: string;
+  content: string;
+  createdAt: string;
+}
+
+function mapApiMessage(msg: ApiMessage): Message {
+  return {
+    id: msg.id,
+    username: msg.username,
+    avatar: msg.avatar,
+    content: msg.content,
+    timestamp: new Date(msg.createdAt),
+  };
+}
 
 function formatTimestamp(date: Date): string {
   const now = new Date();
@@ -122,7 +107,7 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [onlineCount] = useState(16);
@@ -136,17 +121,49 @@ export function ChatSidebar({ showNewsRibbon = true }: ChatSidebarProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Load chat history from REST on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/chat/history`)
+      .then((res) => res.json())
+      .then((data: ApiMessage[]) => {
+        if (!cancelled) {
+          setMessages(data.map(mapApiMessage));
+        }
+      })
+      .catch((err: unknown) =>
+        console.error("[ChatSidebar] Failed to load history:", err),
+      );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Listen for incoming chat:message events via socket
+  useEffect(() => {
+    const unsubscribe = socketService.onChatMessage((data: ApiMessage) => {
+      setMessages((prev) => {
+        // De-duplicate: server echoes our own sends back through chat:message
+        if (prev.some((m) => m.id === data.id)) return prev;
+        return [...prev, mapApiMessage(data)];
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
-    const newMessage: Message = {
-      id: crypto.randomUUID(),
-      username: "You",
-      content: inputValue.trim(),
-      timestamp: new Date(),
-    };
+    // Emit chat:send to the server instead of pushing to local state.
+    // The server will broadcast chat:message back to all clients in the
+    // channel (including the sender), which the listener above will handle.
+    socketService.sendChat({ content: inputValue.trim() });
 
-    setMessages((prev) => [...prev, newMessage]);
     setInputValue("");
   };
 
