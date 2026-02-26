@@ -9,6 +9,7 @@ import RouteProgressBar from "./components/RouteProgressBar";
 import { Toaster } from "sonner";
 import Dashboard from "./pages/Dashboard";
 import LearnPage from "./pages/Learn";
+import Connect from "./pages/Connect";
 
 function App() {
   const [showNewsRibbon, setShowNewsRibbon] = useState(true);
@@ -35,6 +36,10 @@ function App() {
           <Route
             path="/learn"
             element={<LearnPage />}
+          />
+          <Route
+            path="/connect"
+            element={<Connect />}
           />
           <Route
             path="/pools"
