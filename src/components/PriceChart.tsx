@@ -9,6 +9,7 @@ import {
 } from "lightweight-charts";
 import { priceApi, type PricePoint } from "../lib/api-client";
 import { socketService } from "../lib/socket";
+import { LoadingState, ErrorState } from "./ui/StatusStates";
 
 interface PriceChartProps {
   height?: number;
@@ -220,24 +221,24 @@ const PriceChart = ({ height = 300 }: PriceChartProps) => {
     };
   }, [updatePositions]);
 
-  useEffect(() => {
-    const loadInitialPrices = async () => {
-      setIsLoading(true);
-      setLoadError(null);
+  const loadInitialPrices = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
 
-      try {
-        const prices = await priceApi.getPriceSeries();
-        setData(prices);
-        setLastUpdatedAt(new Date());
-      } catch (error) {
-        setLoadError(error instanceof Error ? error.message : "Failed to load price data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadInitialPrices();
+    try {
+      const prices = await priceApi.getPriceSeries();
+      setData(prices);
+      setLastUpdatedAt(new Date());
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Failed to load price data");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadInitialPrices();
+  }, [loadInitialPrices]);
 
   useEffect(() => {
     socketService.connect();
@@ -353,12 +354,23 @@ const PriceChart = ({ height = 300 }: PriceChartProps) => {
             </div>
           )}
 
-          {(isLoading || loadError) && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
-              {isLoading && <p className="text-sm font-medium text-white/90">Loading live price data...</p>}
-              {loadError && !isLoading && (
-                <p className="text-sm font-medium text-red-200">Failed to load prices: {loadError}</p>
-              )}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center bg-[#0a1929]/80 backdrop-blur-sm rounded-xl">
+              <LoadingState
+                message="Loading live price data..."
+                variant="spinner"
+                dark={true}
+              />
+            </div>
+          )}
+          {loadError && !isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center p-4 text-center rounded-xl">
+              <ErrorState
+                message={loadError}
+                onRetry={loadInitialPrices}
+                variant="dark"
+                title="Failed to load prices"
+              />
             </div>
           )}
         </div>
