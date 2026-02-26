@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Avatar from '../assets/avatar.svg';
 import { leaderboardApi, type LeaderboardEntry } from '../lib/api-client';
+import { LoadingState, ErrorState, EmptyState } from './ui/StatusStates';
 
 interface LeaderboardUser {
   id: string;
@@ -22,28 +23,23 @@ const Leaderboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchLeaderboard() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await leaderboardApi.getLeaderboard('UP_DOWN');
-        if (cancelled) return;
-        const mapped = (Array.isArray(data) ? data : []).map(mapEntryToUser);
-        setUsers(mapped);
-      } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
-        setUsers([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const fetchLeaderboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await leaderboardApi.getLeaderboard('UP_DOWN');
+      const mapped = (Array.isArray(data) ? data : []).map(mapEntryToUser);
+      setUsers(mapped);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     void fetchLeaderboard();
-    return () => { cancelled = true; };
   }, []);
 
   const sortedUsers = useMemo(() => {
@@ -62,10 +58,7 @@ const Leaderboard = () => {
         <h1 className="text-3xl font-bold text-[#292D32] dark:text-white text-center mb-16 tracking-tight">
           Leaderboard
         </h1>
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-          <div className="w-10 h-10 border-2 border-[#2C4BFD] border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading leaderboard...</p>
-        </div>
+        <LoadingState message="Loading leaderboard..." className="min-h-[40vh]" />
       </div>
     );
   }
@@ -76,16 +69,7 @@ const Leaderboard = () => {
         <h1 className="text-3xl font-bold text-[#292D32] dark:text-white text-center mb-16 tracking-tight">
           Leaderboard
         </h1>
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl max-w-xl mx-auto">
-          <p className="text-red-600 dark:text-red-400 font-medium text-center">{error}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-[#2C4BFD] text-white rounded-lg font-medium hover:opacity-90 transition"
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState message={error} onRetry={fetchLeaderboard} className="min-h-[40vh]" />
       </div>
     );
   }
@@ -215,9 +199,11 @@ const Leaderboard = () => {
           ))}
         </ul>
       ) : sortedUsers.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 font-medium max-w-xl mx-auto">
-          No leaderboard data yet. Be the first to make a prediction!
-        </p>
+        <EmptyState
+          title="No leaderboard data yet"
+          message="Be the first to make a prediction and climb to the top!"
+          className="max-w-xl mx-auto"
+        />
       ) : null}
     </div>
   );

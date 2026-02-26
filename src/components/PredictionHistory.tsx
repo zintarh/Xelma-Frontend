@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { predictionsApi, type UserPrediction } from "../lib/api-client";
+import { LoadingState, ErrorState, EmptyState } from "./ui/StatusStates";
 
 interface PredictionHistoryProps {
   userId: string | null;
@@ -48,48 +49,49 @@ export default function PredictionHistory({ userId }: PredictionHistoryProps) {
     void loadHistory();
   }, [loadHistory]);
 
+  if (!userId) {
+    return (
+      <section className="bg-white dark:bg-gray-800 p-6 shadow-sm rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prediction History</h3>
+        </div>
+        <EmptyState
+          title="Connect your wallet"
+          message="Connect your wallet to view your prediction history."
+          className="min-h-[200px]"
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 p-6 shadow-sm rounded-xl border border-gray-100 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prediction History</h3>
-        {userId && (
-          <button
-            type="button"
-            className="text-sm font-medium text-[#2C4BFD] hover:underline"
-            onClick={() => void loadHistory()}
-          >
-            Refresh
-          </button>
-        )}
+        <button
+          type="button"
+          className="text-sm font-medium text-[#2C4BFD] hover:underline"
+          onClick={() => void loadHistory()}
+          disabled={isLoading}
+        >
+          Refresh
+        </button>
       </div>
 
-      {!userId && (
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Connect your wallet to view your prediction history.
-        </p>
-      )}
-
       {isLoading && (
-        <p className="text-sm text-gray-600 dark:text-gray-300" role="status">
-          Loading prediction history...
-        </p>
+        <LoadingState message="Loading prediction history..." variant="skeleton" skeletonLines={5} className="min-h-[200px]" />
       )}
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-900/20 p-3">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button
-            type="button"
-            className="mt-2 text-sm font-medium text-red-700 dark:text-red-300 hover:underline"
-            onClick={() => void loadHistory()}
-          >
-            Retry
-          </button>
-        </div>
+      {error && !isLoading && (
+        <ErrorState message={error} onRetry={loadHistory} className="min-h-[200px]" />
       )}
 
-      {!isLoading && !error && userId && history.length === 0 && (
-        <p className="text-sm text-gray-600 dark:text-gray-300">No predictions yet.</p>
+      {!isLoading && !error && history.length === 0 && (
+        <EmptyState
+          title="No predictions yet"
+          message="Start making predictions to see your history here."
+          className="min-h-[200px]"
+        />
       )}
 
       {!isLoading && !error && history.length > 0 && (
