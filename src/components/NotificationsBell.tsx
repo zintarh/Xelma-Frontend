@@ -18,13 +18,14 @@ const NotificationsBell: React.FC = () => {
     void useNotificationsStore.getState().fetchUnread();
   }, []);
 
+
   useEffect(() => {
     if (joinedRef.current) return;
     appSocket.joinChannel("join:notifications");
     const off = appSocket.on(
       "join:notifications",
       "notification",
-      (payload) => {
+      (payload: unknown) => {
         addNotification(payload as NotificationEventPayload);
       },
     );
@@ -39,6 +40,7 @@ const NotificationsBell: React.FC = () => {
       joinedRef.current = false;
     };
   }, [addNotification]);
+
 
   return (
     <div className="relative">
