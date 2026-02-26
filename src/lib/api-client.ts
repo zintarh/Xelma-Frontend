@@ -33,6 +33,13 @@ export interface UserPrediction {
     [key: string]: unknown;
 }
 
+export interface SubmitPredictionRequest {
+    direction: 'UP' | 'DOWN';
+    stake: string;
+    exactPrice?: string;
+    isLegend: boolean;
+}
+
 type UserPredictionsResponse =
     | UserPrediction[]
     | {
@@ -61,6 +68,12 @@ export const predictionsApi = {
         const response = await apiFetch<UserPredictionsResponse>(`/api/predictions/user/${encodeURIComponent(userId)}`);
         return normalizeUserPredictions(response);
     },
+    submit: async (prediction: SubmitPredictionRequest) => {
+        return apiFetch<UserPrediction>('/api/predictions/submit', {
+            method: 'POST',
+            body: JSON.stringify(prediction),
+        });
+    },
 };
 
 export const notificationsApi = {
@@ -68,6 +81,7 @@ export const notificationsApi = {
     getNotifications: () => apiFetch<NotificationItem[]>('/api/notifications'),
     markAsRead: (id: string) => apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST' }),
 };
+
 
 export interface PricePoint {
     time: number;
@@ -149,4 +163,3 @@ export const leaderboardApi = {
         return normalizeLeaderboard(response);
     },
 };
-
