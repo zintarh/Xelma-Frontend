@@ -81,3 +81,85 @@ export const notificationsApi = {
     getNotifications: () => apiFetch<NotificationItem[]>('/api/notifications'),
     markAsRead: (id: string) => apiFetch<void>(`/api/notifications/${id}/read`, { method: 'POST' }),
 };
+
+
+export interface PricePoint {
+    time: number;
+    value: number;
+}
+
+type PriceResponse =
+    | PricePoint[]
+    | {
+        prices?: PricePoint[];
+        data?: PricePoint[];
+        history?: PricePoint[];
+        price?: number | string;
+        value?: number | string;
+        timestamp?: number | string;
+        time?: number | string;
+    };
+
+function toPricePoint(value: unknown): PricePoint | null {
+    if (!value || typeof value !== 'object') return null;
+    const record = value as Record<string, unknown>;
+    const rawTime = record.time ?? record.timestamp;
+    const rawPrice = record.value ?? record.price;
+
+    const time = typeof rawTime === 'string' ? Number(rawTime) : rawTime;
+    const price = typeof rawPrice === 'string' ? Number(rawPrice) : rawPrice;
+
+    if (!Number.isFinite(time) || !Number.isFinite(price)) return null;
+    const normalizedTime = (time as number) > 9999999999 ? Math.floor((time as number) / 1000) : Math.floor(time as number);
+    return { time: normalizedTime, value: price as number };
+}
+
+function normalizePriceResponse(response: PriceResponse): PricePoint[] {
+    if (Array.isArray(response)) {
+        return response.map(toPricePoint).filter((point): point is PricePoint => point !== null);
+    }
+
+    const history = response.prices ?? response.data ?? response.history;
+    if (Array.isArray(history)) {
+        return history.map(toPricePoint).filter((point): point is PricePoint => point !== null);
+    }
+
+    const singlePoint = toPricePoint(response);
+    return singlePoint ? [singlePoint] : [];
+}
+
+export const priceApi = {
+    getPriceSeries: async () => {
+        const response = await apiFetch<PriceResponse>('/api/price');
+        const normalized = normalizePriceResponse(response);
+        return normalized.sort((a, b) => a.time - b.time);
+    },
+};
+
+/** Leaderboard entry from GET /api/leaderboard?mode=UP_DOWN */
+export interface LeaderboardEntry {
+    id?: string | number;
+    userId?: string;
+    username?: string;
+    name?: string;
+    avatar?: string | null;
+    xlm?: number;
+    score?: number;
+    [key: string]: unknown;
+}
+
+type LeaderboardResponse = LeaderboardEntry[] | { data?: LeaderboardEntry[]; leaderboard?: LeaderboardEntry[] };
+
+function normalizeLeaderboard(response: LeaderboardResponse): LeaderboardEntry[] {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response.data)) return response.data;
+    if (Array.isArray(response.leaderboard)) return response.leaderboard;
+    return [];
+}
+
+export const leaderboardApi = {
+    getLeaderboard: async (mode: string = 'UP_DOWN') => {
+        const response = await apiFetch<LeaderboardResponse>(`/api/leaderboard?mode=${encodeURIComponent(mode)}`);
+        return normalizeLeaderboard(response);
+    },
+};

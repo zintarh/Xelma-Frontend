@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Avatar from '../assets/avatar.svg';
+import { leaderboardApi, type LeaderboardEntry } from '../lib/api-client';
 
 interface LeaderboardUser {
   id: string;
@@ -8,33 +9,86 @@ interface LeaderboardUser {
   xlm: number;
 }
 
-const MOCK_USERS: LeaderboardUser[] = [
-  { id: "1", name: "devtochukwu", avatar: Avatar, xlm: 12500.5 },
-  { id: "2", name: "CryptoKing", avatar: Avatar, xlm: 11200.0 },
-  { id: "3", name: "StellarQueen", avatar: Avatar, xlm: 10850.75 },
-  { id: "4", name: "MoonWalker", avatar: Avatar, xlm: 9500.2 },
-  { id: "5", name: "HodlGang", avatar: Avatar, xlm: 8200.1 },
-  { id: "6", name: "ToTheMoon", avatar: Avatar, xlm: 7600.0 },
-  { id: "7", name: "DiamondHands", avatar: Avatar, xlm: 6400.5 },
-  { id: "8", name: "RocketMan", avatar: Avatar, xlm: 5100.25 },
-  { id: "9", name: "SatoshiFan", avatar: Avatar, xlm: 4300.0 },
-  { id: "10", name: "BlockchainBro", avatar: Avatar, xlm: 3200.1 },
-];
+function mapEntryToUser(entry: LeaderboardEntry, index: number): LeaderboardUser {
+  const id = String(entry.id ?? entry.userId ?? index);
+  const name = entry.username ?? entry.name ?? 'Anonymous';
+  const xlm = Number(entry.xlm ?? entry.score ?? 0);
+  const avatar = entry.avatar && typeof entry.avatar === 'string' ? entry.avatar : Avatar;
+  return { id, name, avatar, xlm };
+}
 
 const Leaderboard = () => {
-  // Sort users by XLM descending (just to be safe, though mock data is sorted)
-  const sortedUsers = useMemo(() => {
-    return [...MOCK_USERS].sort((a, b) => b.xlm - a.xlm);
+  const [users, setUsers] = useState<LeaderboardUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchLeaderboard() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await leaderboardApi.getLeaderboard('UP_DOWN');
+        if (cancelled) return;
+        const mapped = (Array.isArray(data) ? data : []).map(mapEntryToUser);
+        setUsers(mapped);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
+        setUsers([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void fetchLeaderboard();
+    return () => { cancelled = true; };
   }, []);
+
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => b.xlm - a.xlm);
+  }, [users]);
 
   const topThree = sortedUsers.slice(0, 3);
   const restUsers = sortedUsers.slice(3);
-
-  // Podium positions: Rank 2 (left), Rank 1 (center), Rank 3 (right)
-  // We'll map them manually to control layout easily
   const rank1 = topThree[0];
   const rank2 = topThree[1];
   const rank3 = topThree[2];
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 pb-12 pt-8">
+        <h1 className="text-3xl font-bold text-[#292D32] dark:text-white text-center mb-16 tracking-tight">
+          Leaderboard
+        </h1>
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+          <div className="w-10 h-10 border-2 border-[#2C4BFD] border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Loading leaderboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 pb-12 pt-8">
+        <h1 className="text-3xl font-bold text-[#292D32] dark:text-white text-center mb-16 tracking-tight">
+          Leaderboard
+        </h1>
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-2xl max-w-xl mx-auto">
+          <p className="text-red-600 dark:text-red-400 font-medium text-center">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#2C4BFD] text-white rounded-lg font-medium hover:opacity-90 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-12 pt-8">
@@ -83,7 +137,6 @@ const Leaderboard = () => {
               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-linear-to-r from-[#FFD700] to-[#FDB931] text-gray-900 text-base font-extrabold py-1.5 px-4 rounded-full shadow-lg z-20 whitespace-nowrap min-w-[40px] text-center border-2 border-white dark:border-gray-900">
                 #1
               </div>
-              {/* Crown Icon or Glow */}
               <div
                 className="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl animate-bounce drop-shadow-[0_0_10px_rgba(255,215,0,0.8)]"
                 aria-hidden="true"
@@ -128,38 +181,44 @@ const Leaderboard = () => {
       </div>
 
       {/* Ranked List */}
-      <ul className="space-y-4 max-w-3xl mx-auto">
-        {restUsers.map((user, index) => (
-          <li
-            key={user.id}
-            className="flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-0 bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-100 dark:border-gray-700/50 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#2C4BFD]/30 dark:hover:border-[#2C4BFD]/50 transition-all duration-300 transform hover:-translate-y-0.5"
-          >
-            <div className="flex items-center gap-6 w-full justify-center md:justify-start">
-              <span className="text-gray-400 dark:text-gray-500 font-bold text-lg w-8 text-center tabular-nums">
-                {index + 4}
-              </span>
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-transparent group-hover:border-[#2C4BFD]/20">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-full h-full object-cover"
-                />
+      {restUsers.length > 0 ? (
+        <ul className="space-y-4 max-w-3xl mx-auto">
+          {restUsers.map((user, index) => (
+            <li
+              key={user.id}
+              className="flex flex-col items-center gap-3 md:flex-row md:justify-between md:gap-0 bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-100 dark:border-gray-700/50 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#2C4BFD]/30 dark:hover:border-[#2C4BFD]/50 transition-all duration-300 transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-center gap-6 w-full justify-center md:justify-start">
+                <span className="text-gray-400 dark:text-gray-500 font-bold text-lg w-8 text-center tabular-nums">
+                  {index + 4}
+                </span>
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-transparent group-hover:border-[#2C4BFD]/20">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="font-bold text-[#292D32] dark:text-gray-200 text-lg">
+                  {user.name}
+                </span>
               </div>
-              <span className="font-bold text-[#292D32] dark:text-gray-200 text-lg">
-                {user.name}
-              </span>
-            </div>
-            <div className="text-center md:text-right w-full md:w-auto mt-2 md:mt-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl">
-              <span className="font-bold text-[#2C4BFD] text-lg tabular-nums">
-                {user.xlm.toLocaleString()}
-              </span>
-              <span className="text-xs font-semibold text-blue-400 ml-1.5 uppercase tracking-wider">
-                XLM
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
+              <div className="text-center md:text-right w-full md:w-auto mt-2 md:mt-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-xl">
+                <span className="font-bold text-[#2C4BFD] text-lg tabular-nums">
+                  {user.xlm.toLocaleString()}
+                </span>
+                <span className="text-xs font-semibold text-blue-400 ml-1.5 uppercase tracking-wider">
+                  XLM
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : sortedUsers.length === 0 ? (
+        <p className="text-center text-gray-500 dark:text-gray-400 font-medium max-w-xl mx-auto">
+          No leaderboard data yet. Be the first to make a prediction!
+        </p>
+      ) : null}
     </div>
   );
 };
